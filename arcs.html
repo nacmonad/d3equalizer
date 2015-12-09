@@ -64,7 +64,7 @@
 </div>
 
   <script src="https://code.jquery.com/jquery-2.1.3.min.js"></script>
-    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
     <script>
 
@@ -95,7 +95,7 @@
           //var frequencyData = new Uint8Array(analyser.frequencyBinCount);
           analyser.fftSize = 2048;
           var bufferLength = analyser.fftSize;
-          var numberBars = 8;
+          var numberBars = 64;
           
           //initialize array because pie(frequendyData) fucks up large   likely due to the Uint8Array type
           var frequencyData = new Uint8Array(numberBars);  
