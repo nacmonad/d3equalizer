@@ -136,7 +136,7 @@
                     $("#time").text(audioElement.currentTime.toFixed(2));
                      requestAnimationFrame(renderChart);
                      analyser.getByteFrequencyData(frequencyData);
-                     console.log(frequencyData);
+                     //console.log(frequencyData);
 
                     arc.outerRadius(function(d,i){ return min / 2 * 0. + frequencyData[i]});
                     svg.selectAll('path').attr('d', arc)
@@ -167,7 +167,7 @@ $("#playButton").click(function() {
 
 //stopButton
 $("#stopButton").click(function() {
-  console.log("stop righ?");
+  //console.log("stop righ?");
   audioElement.pause();
   audioElement.currentTime = 0;
   if($(".playToggle")[0].className == "playToggle glyphicon glyphicon-pause") { 
