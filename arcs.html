@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">  
+  <title>D3 equalizer</title>
+  <!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+<style>
+  #player{
+    background:steelblue;
+    width:176px;
+  }
+  #time{
+    background-color:#333333;
+    color:steelblue;
+    border-radius:10px 0px 0px 10px;
+    width:auto;
+    float:right;
+    text-align:center;
+    font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif;
+    font-size: 24px;
+    font-style: normal;
+  }
+  #buttonGroup{
+    float:center;
+  }
+  #playButton{
+
+  }
+  .highlight {
+    background:yellow;
+  }
+
+  svg {
+    background:#eeeeee;
+  }
+
+
+</style>
+</head>
+<body>
+
+  <audio id ="audioElement" src="./audio/Tax.mp3"></audio>
+  
+  <div class="container">
+      <div id ="player">
+        <g id="buttonGroup">
+           <button type ="button" id="playButton" class="btn btn-default btn-md button-play" onclick=""> <span class="playToggle glyphicon glyphicon-play"></span></button>
+         <button type ="button" id="stopButton" class="btn btn-default btn-md button-stop" onclick=""><span class="glyphicon glyphicon-stop"></span></button>
+         <button type ="button" class="btn btn-default btn-md button-volume-down" onclick="document.getElementById('audioElement').volume-=0.1"><span class="glyphicon glyphicon-volume-down"></span></button>
+         <button type ="button" class="btn btn-default btn-md button-volume-up" onclick="document.getElementById('audioElement').volume+=0.1"><span class="glyphicon glyphicon-volume-up"></span></button>
+        </g>
+         <svg width = "0px" height = "0px">
+          <defs>
+            <filter id="filter-map" x="-0.15000001" y="-0.15000001" width="1.3" height="1.3" color-interpolation-filters="sRGB" >
+                <feGaussianBlur stdDeviation="3" in="SourceGraphic" result="result4" id="feGaussianBlur4208" />
+            </filter>
+          </defs>
+        </svg>
+        <p id="time"></p>
+      </div>
+      <div id ="viz"></div>
+</div>
+
+  <script src="https://code.jquery.com/jquery-2.1.3.min.js"></script>
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+    <script>
+
+    var colours = d3.scale.category20b();
+       var colorScale = d3.scale.linear()
+            .domain([0,200])
+            .range(["black","steelblue","chartreuse"]);  
+            //.range(["black","chartreuse", "OrangeRed"]);
+
+    $(document).ready(function () {
+        //header div transition     
+        d3.select("#player")
+          .transition()
+          .duration(1000)
+          .style("width",$('#viz').width() + "px")
+          .style("background-color","black");
+        
+        //html5 audio elements
+          var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          var audioElement = document.getElementById('audioElement');
+          var audioSrc = audioCtx.createMediaElementSource(audioElement);
+          var analyser = audioCtx.createAnalyser();
+
+          // Bind our analyser to the media element source.
+          audioSrc.connect(analyser);
+          audioSrc.connect(audioCtx.destination);
+
+          //var frequencyData = new Uint8Array(analyser.frequencyBinCount);
+          analyser.fftSize = 2048;
+          var bufferLength = analyser.fftSize;
+          var numberBars = 8;
+          
+          //initialize array because pie(frequendyData) fucks up large   likely due to the Uint8Array type
+          var frequencyData = new Uint8Array(numberBars);  
+          for (var i = 0, staticData = []; i < numberBars; i++) staticData.push(0);
+
+          var formattedTime = new Date(null);
+
+          var height = 600;
+          var width = 1140;
+          var margin = 25;
+          var min = Math.min(width,height);
+          var r = (min+margin)/2;
+
+          var svg = d3.select('#viz').append('svg')
+              .attr({width: width, height: height})
+              .append('g')
+                .attr('transform', 'translate(' + width / 2 + ',' + height / 2 + ')');
+
+          var pie = d3.layout.pie().sort(null);
+
+          var arc = d3.svg.arc()
+            .innerRadius(min / 2 * 0.25)
+            .startAngle(function(d,i){return i*2*Math.PI/frequencyData.length;})
+            .endAngle(function(d,i){ return (i+1)*2*Math.PI/frequencyData.length });
+           
+         
+      // add the <path>s for each arc slice
+         svg.selectAll('path').data(pie(staticData))    //pie(frequencyData)
+            .enter().append('path')
+              .style('stroke', 'white')
+              .style('stroke-width',1)
+              .attr('d', arc);
+           // .attr('fill', function(d, i){ 
+             //       return colours(i) }); // colours(i)
+                      
+          // Continuously loop and update chart with frequency data.
+          function renderChart() { 
+                    $("#time").text(audioElement.currentTime.toFixed(2));
+                     requestAnimationFrame(renderChart);
+                     analyser.getByteFrequencyData(frequencyData);
+                     console.log(frequencyData);
+
+                    arc.outerRadius(function(d,i){ return min / 2 * 0. + frequencyData[i]});
+                    svg.selectAll('path').attr('d', arc)
+                        .attr('fill', function(d, i){ 
+                        return colorScale(2*frequencyData[i]) })
+                        .attr('filter', 'url(#filter-map)');
+          }
+          renderChart();
+});
+
+//window resize header transitions
+$(window).resize(function(){
+  d3.select("#player")
+    .transition()
+    .duration(1000)
+    .style("width",$('#viz').width() + "px")
+    .style("background-color","black");
+    })
+
+
+
+//playButton pauseButton toggle
+$("#playButton").click(function() {
+  $(".playToggle").toggleClass("glyphicon-play glyphicon-pause");
+  if($(".playToggle")[0].className == "playToggle glyphicon glyphicon-pause") { audioElement.play();};
+  if($(".playToggle")[0].className == "playToggle glyphicon glyphicon-play") { audioElement.pause();};
+});
+
+//stopButton
+$("#stopButton").click(function() {
+  console.log("stop righ?");
+  audioElement.pause();
+  audioElement.currentTime = 0;
+  if($(".playToggle")[0].className == "playToggle glyphicon glyphicon-pause") { 
+    $(".playToggle").toggleClass("glyphicon-play glyphicon-pause");};
+});
+
+</script>
+
+</body>
+</html>
